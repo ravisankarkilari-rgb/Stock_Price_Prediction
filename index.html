@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StockSight AI — ARIMA + LSTM Prediction</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ── HEADER ─────────────────────────────────────────── -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0a0d14" stroke-width="2.5" stroke-linecap="round">
+          <polyline points="3,17 7,13 11,17 15,9 19,17"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">StockSight AI</div>
+        <div class="logo-sub">Time-Series Prediction Engine</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="badge badge-green"><span class="pulse"></span>Live Simulation</span>
+      <span class="badge badge-blue">ARIMA + LSTM</span>
+    </div>
+  </div>
+
+  <!-- ── STOCK SELECTOR ─────────────────────────────────── -->
+  <div class="stock-bar" id="stockBar"></div>
+
+  <!-- ── METRICS ────────────────────────────────────────── -->
+  <div class="metrics" id="metricsRow"></div>
+
+  <!-- ── MAIN CHART ─────────────────────────────────────── -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title">Price History &amp; Forecast</div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#e2e8f4"></div>Historical</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#4f8ef7"></div>ARIMA Forecast</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#00d4a0"></div>LSTM Forecast</div>
+        <div class="leg-item"><div class="leg-dot conf-dot"></div>Confidence Band</div>
+      </div>
+    </div>
+    <div style="position:relative; height:260px;">
+      <canvas id="mainChart"></canvas>
+    </div>
+  </div>
+
+  <!-- ── TABS ───────────────────────────────────────────── -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('models',this)">Model Details</button>
+    <button class="tab" onclick="switchTab('forecast',this)">Forecast Table</button>
+    <button class="tab" onclick="switchTab('compare',this)">Comparison</button>
+    <button class="tab" onclick="switchTab('signal',this)">Signal</button>
+  </div>
+
+  <!-- ── TAB: MODELS ────────────────────────────────────── -->
+  <div id="tab-models">
+    <div class="two-col">
+
+      <div class="model-card">
+        <div class="model-name">ARIMA (p,d,q)</div>
+        <div class="model-desc">AutoRegressive Integrated Moving Average. Best for linear, stationary trends with seasonal components.</div>
+        <div class="param-row"><span class="param-label">AR order (p)</span><span class="param-val" id="arima-p">2</span></div>
+        <div class="param-row"><span class="param-label">Differencing (d)</span><span class="param-val" id="arima-d">1</span></div>
+        <div class="param-row"><span class="param-label">MA order (q)</span><span class="param-val" id="arima-q">2</span></div>
+        <div class="separator"></div>
+        <div class="section-label">Training Progress</div>
+        <div class="progress-bar"><div class="progress-fill" id="arima-prog" style="background:#4f8ef7;width:0%"></div></div>
+        <div class="acc-grid">
+          <div class="acc-item"><div class="acc-label">RMSE</div><div class="acc-val" id="arima-rmse" style="color:#4f8ef7">—</div></div>
+          <div class="acc-item"><div class="acc-label">MAE</div><div class="acc-val" id="arima-mae" style="color:#4f8ef7">—</div></div>
+          <div class="acc-item"><div class="acc-label">MAPE</div><div class="acc-val" id="arima-mape" style="color:#4f8ef7">—</div></div>
+          <div class="acc-item"><div class="acc-label">R²</div><div class="acc-val" id="arima-r2" style="color:#4f8ef7">—</div></div>
+        </div>
+        <button class="run-btn" id="arimaBtn" onclick="runARIMA()">&#9654; Train ARIMA</button>
+      </div>
+
+      <div class="model-card">
+        <div class="model-name">LSTM Neural Network</div>
+        <div class="model-desc">Long Short-Term Memory. Captures complex non-linear patterns and long-range dependencies.</div>
+        <div class="param-row"><span class="param-label">Layers</span><span class="param-val" id="lstm-layers">2</span></div>
+        <div class="param-row"><span class="param-label">Units / Layer</span><span class="param-val" id="lstm-units">64</span></div>
+        <div class="param-row"><span class="param-label">Lookback Window</span><span class="param-val" id="lstm-window">30</span></div>
+        <div class="separator"></div>
+        <div class="section-label">Training Progress</div>
+        <div class="progress-bar"><div class="progress-fill" id="lstm-prog" style="background:#00d4a0;width:0%"></div></div>
+        <div class="acc-grid">
+          <div class="acc-item"><div class="acc-label">RMSE</div><div class="acc-val" id="lstm-rmse" style="color:#00d4a0">—</div></div>
+          <div class="acc-item"><div class="acc-label">MAE</div><div class="acc-val" id="lstm-mae" style="color:#00d4a0">—</div></div>
+          <div class="acc-item"><div class="acc-label">MAPE</div><div class="acc-val" id="lstm-mape" style="color:#00d4a0">—</div></div>
+          <div class="acc-item"><div class="acc-label">R²</div><div class="acc-val" id="lstm-r2" style="color:#00d4a0">—</div></div>
+        </div>
+        <button class="run-btn lstm-btn" id="lstmBtn" onclick="runLSTM()">&#9654; Train LSTM</button>
+      </div>
+
+    </div>
+    <div class="model-card" style="margin-top:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="model-name" style="margin-bottom:0">Run Both Models</div>
+        <select id="forecastDays" onchange="updateForecast()">
+          <option value="7">7-day forecast</option>
+          <option value="14" selected>14-day forecast</option>
+          <option value="30">30-day forecast</option>
+        </select>
+      </div>
+      <button class="run-btn both-btn" onclick="runBoth()">&#9889; Train Both &amp; Compare</button>
+    </div>
+  </div>
+
+  <!-- ── TAB: FORECAST TABLE ────────────────────────────── -->
+  <div id="tab-forecast" style="display:none">
+    <div class="model-card">
+      <div class="chart-header" style="margin-bottom:12px">
+        <div class="chart-title">14-Day Price Forecast</div>
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot" style="background:#4f8ef7"></div>ARIMA</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#00d4a0"></div>LSTM</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="forecast-table">
+          <thead>
+            <tr><th>Date</th><th>ARIMA ($)</th><th>LSTM ($)</th><th>Avg ($)</th><th>Change</th><th>Confidence</th></tr>
+          </thead>
+          <tbody id="forecastBody">
+            <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Train models to see forecast</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: COMPARISON ────────────────────────────────── -->
+  <div id="tab-compare" style="display:none">
+    <div class="two-col">
+      <div class="model-card">
+        <div class="model-name" style="margin-bottom:12px">Accuracy Comparison</div>
+        <div id="compareContent" style="color:var(--muted);font-size:12px">Train both models to compare.</div>
+      </div>
+      <div class="model-card">
+        <div class="model-name" style="margin-bottom:12px">Residual Chart</div>
+        <div style="position:relative;height:160px"><canvas id="residualChart"></canvas></div>
+      </div>
+    </div>
+    <div class="model-card" style="margin-top:14px">
+      <div class="model-name" style="margin-bottom:12px">Forecast Comparison Chart</div>
+      <div style="position:relative;height:200px"><canvas id="compareChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── TAB: SIGNAL ────────────────────────────────────── -->
+  <div id="tab-signal" style="display:none">
+    <div class="model-card">
+      <div class="model-name" style="margin-bottom:14px">Investment Signal</div>
+      <div id="signalContent" style="color:var(--muted);font-size:12px">Train models to generate signal.</div>
+    </div>
+  </div>
+
+</div><!-- end .app -->
+
+<script src="app.js"></script>
+</body>
+</html>
