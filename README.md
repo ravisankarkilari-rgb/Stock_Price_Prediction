@@ -1,3 +1,4 @@
+<img width="1897" height="1091" alt="Screenshot 2026-05-29 154430" src="https://github.com/user-attachments/assets/475dcf21-bf68-4c32-b136-2800a3493343" />
 # 📈 Stock Price Prediction Using ARIMA and LSTM
 
 ![Python](https://img.shields.io/badge/Python-3.10-blue?style=flat-square&logo=python)
